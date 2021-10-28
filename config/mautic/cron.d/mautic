@@ -1,0 +1,40 @@
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+# Vital Actions for Mautic
+
+0,15,30,45  * * * *    www-data   php /var/www/html/bin/console mautic:segments:update > /var/log/cron.pipe 2>&1
+5,20,35,50  * * * *    www-data   php /var/www/html/bin/console mautic:campaigns:rebuild > /var/log/cron.pipe 2>&1
+10,25,40,55 * * * *    www-data   php /var/www/html/bin/console mautic:campaigns:trigger > /var/log/cron.pipe 2>&1
+
+# Secondary Actions for Mautic
+
+0,15,30,45 * * * *     www-data   php /var/www/html/bin/console mautic:messages:send > /var/log/cron.pipe 2>&1
+0,15,30,45 * * * *     www-data   php /var/www/html/bin/console mautic:emails:send > /var/log/cron.pipe 2>&1
+0,15,30,45 * * * *     www-data   php /var/www/html/bin/console mautic:email:fetch > /var/log/cron.pipe 2>&1
+
+0,15,30,45 * * * *     www-data   php /var/www/html/bin/console mautic:webhooks:process > /var/log/cron.pipe 2>&1
+0,15,30,45 * * * *     www-data   php /var/www/html/bin/console mautic:broadcasts:send > /var/log/cron.pipe 2>&1
+
+       */5 * * * *     www-data   php /var/www/html/bin/console mautic:import > /var/log/cron.pipe 2>&1
+       */5 * * * *     www-data   php /var/www/html/bin/console mautic:reports:scheduler > /var/log/cron.pipe 2>&1
+0,15,30,45 * * * *     www-data   php /var/www/html/bin/console mautic:social:monitoring > /var/log/cron.pipe 2>&1
+
+# Reset files and folders permissions and Ownership
+
+10 2 * * *     root       sudo chown 33:33 /var/www/html/* -R > /var/log/cron.pipe 2>&1
+20 2 * * *     root       sudo chmod -R g+w /var/www/html/var/cache/ /var/www/html/var/logs/ /var/www/html/app/config/ > /var/log/cron.pipe 2>&1
+30 2 * * *     root       sudo chmod -R g+w /var/www/html/media/files/ /var/www/html/media/images/ /var/www/html/translations/ > /var/log/cron.pipe 2>&1
+40 2 * * *     root       sudo find /var/www/html/. -type d -not -perm 755 -exec chmod 755 {} \; > /var/log/cron.pipe 2>&1
+50 2 * * *     root       sudo find /var/www/html/. -type f -not -perm 644 -exec chmod 644 {} \; > /var/log/cron.pipe 2>&1
+
+# Clean Cache and others Maintenance Processes
+
+10 3 * * *     www-data   php /var/www/html/bin/console mautic:maintenance:cleanup --days-old=365 > /var/log/cron.pipe 2>&1
+20 3 * * *     www-data   php /var/www/html/bin/console mautic:contacts:dedup > /var/log/cron.pipe 2>&1
+30 3 * * *     www-data   php /var/www/html/bin/console mautic:unusedip:delete > /var/log/cron.pipe 2>&1
+40 3 * * *     www-data   php /var/www/html/bin/console cache:clear > /var/log/cron.pipe 2>&1
+50 3 * * *     root       sudo ls /var/www/html/var/cache/ | grep -v "ip_data" | xargs rm -rf > /var/log/cron.pipe 2>&1
+59 3 * * *     www-data   php /var/www/html/bin/console cache:warmup > /var/log/cron.pipe 2>&1
+0  4 * * *     www-data   php /var/www/html/bin/console mautic:iplookup:download > /var/log/cron.pipe 2>&1
+

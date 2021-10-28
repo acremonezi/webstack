@@ -1,0 +1,88 @@
+[tls]
+  [tls.options]
+    [tls.options.default]
+      minVersion = "VersionTLS12"
+      sniStrict = true
+      cipherSuites = [
+        "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+        "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+        "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305",
+        "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
+        "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+        "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305",
+        "TLS_AES_128_GCM_SHA256",
+        "TLS_AES_256_GCM_SHA384",
+        "TLS_CHACHA20_POLY1305_SHA256"
+      ]
+      curvePreferences = ["CurveP521","CurveP384"]
+    [tls.options.mintls13]
+      minVersion = "VersionTLS13"
+
+
+[http]
+  [http.middlewares]
+    [http.middlewares.compression.compress]
+      excludedContentTypes = ["text/event-stream"]
+
+    [http.middlewares.https-redirect.redirectScheme]
+      scheme = "https"
+      permanent = true
+
+    [http.middlewares.security.headers]
+      [http.middlewares.security.headers.customResponseHeaders]
+        browserXssFilter = true
+        contentTypeNosniff = true
+        forceSTSHeader = true
+        frameDeny = true
+        sslRedirect = true
+        #sslForceHost = true
+        stsIncludeSubdomains = true
+        stsPreload = true
+        #ContentSecurityPolicy = "default-src 'self' 'unsafe-inline'"
+        customFrameOptionsValue = "SAMEORIGIN"
+        referrerPolicy = "same-origin"
+        featurePolicy = "vibrate 'self'"
+        stsSeconds = 315360000
+        # CORS
+        accessControlAllowMethods = ["GET", "OPTIONS", "PUT"]
+        accessControlAllowOriginList = ["*"]
+        accessControlMaxAge = 100
+        addVaryHeader = true
+        # Header "x-powered-by"
+        x-powered-by = "YOUR_DOMAIN.com.br"
+        server = "YOUR_DOMAIN.com.br"
+
+    [http.middlewares.auth.basicAuth]
+      users = [
+        "alcides:$apr1$GCd5TkKn$PZvSTWH7UkvkszmYSaNUI/",
+      ]
+      
+  # Removi pq nao sei se adiantou ou nao, caso eu utilize o Mautic em outro dominio eu testo novamente. Muito Obrigao!
+  #
+  # [http.services]
+  #   [http.services.mautic-https]
+  #     [http.services.mautic-https.loadBalancer.sticky.cookie]
+  #       name = "YOUR_DOMAIN"
+  #       secure = true
+  #       httpOnly = true
+  #       sameSite = "None; Secure"
+
+
+
+
+  [http.routers]
+    # [http.routers.my-api]
+    #   rule = "Host(`traefik.YOUR_DOMAIN.com.br`)"
+    #   service = "api@internal"
+    #   middlewares = ["auth"]
+    #     [http.routers.traefik.tls]
+    #       certResolver = "letsencrypt"
+
+    [http.routers.traefik]
+      # To make traefik dashboad available over ssh
+      rule = "Host(`traefik.YOUR_DOMAIN.com.br`)"
+      service = "api@internal"
+      middlewares = ["auth"]
+        [http.routers.traefik.tls]
+          certResolver = "letsencrypt"
+  
