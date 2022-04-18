@@ -2,7 +2,7 @@ version: '3.7'
 services:
 
 # -----------------------------------------------------------------
-# traefik.YOUR_DOMAIN.com.br
+# Reverse Proxy
 
   traefik:
     image: traefik:v2.3.6
@@ -32,19 +32,19 @@ services:
 # -----------------------------------------------------------------
 # Banco de Dados do Wordpress
 
-  mysql_blog:
+  mysql_wp:
     image: mysql:8.0
     restart: unless-stopped
-    container_name: "mysql_blog"
+    container_name: "mysql_wp"
 
     volumes:
       # Configuration
-      # - ../config/mysql_blog/mysql-init.sql:/docker-entrypoint-initdb.d/mysql-init.sql
-      # - ../config/mysql_blog/config-file.cnf:/etc/mysql/config-file.cnf:ro
-      # - ../config/mysql_blog/custom.cnf:/etc/mysql/conf.d/custom.cnf:ro
+      # - ../config/mysql_wp/mysql-init.sql:/docker-entrypoint-initdb.d/mysql-init.sql
+      # - ../config/mysql_wp/config-file.cnf:/etc/mysql/config-file.cnf:ro
+      # - ../config/mysql_wp/custom.cnf:/etc/mysql/conf.d/custom.cnf:ro
 
       # data Storage
-      - ./data/mysql_blog:/var/lib/mysql
+      - ./data/mysql_wp:/var/lib/mysql
 
     command:
        - --default-authentication-plugin=mysql_native_password
@@ -53,8 +53,8 @@ services:
 
     environment:
       MYSQL_ROOT_PASSWORD: 'XTR0tPjUw'
-      MYSQL_DATABASE: 'mysql_blog'
-      MYSQL_USER: 'mysql_blog'
+      MYSQL_DATABASE: 'mysql_wp'
+      MYSQL_USER: 'mysql_wp'
       MYSQL_PASSWORD: '8lLLSucessol2V6RXDp'
 
     labels:
@@ -94,29 +94,29 @@ services:
 
 
 # -----------------------------------------------------------------
-# Wordpress: blog.YOUR_DOMAIN.com.br
+# Wordpress
 
-  blog:
+  wp:
     image: wordpress:latest
     restart: unless-stopped
-    container_name: "blog"
+    container_name: "wp"
 
     volumes:
       # Configuration
-      - ./config/blog/php.ini:/usr/local/etc/php/php.ini:ro
+      - ./config/wp/php.ini:/usr/local/etc/php/php.ini:ro
 
       # data Storage
-      - ./data/blog:/var/www/html
+      - ./data/wp:/var/www/html
 
     depends_on:
-      - "mysql_blog"
+      - "mysql_wp"
 
     environment:
-      WORDPRESS_DB_HOST: 'mysql_blog'
-      WORDPRESS_DB_USER: 'mysql_blog'
+      WORDPRESS_DB_HOST: 'mysql_wp'
+      WORDPRESS_DB_USER: 'mysql_wp'
       WORDPRESS_DB_PASSWORD: '8lLLV6RXDp'
-      WORDPRESS_DB_NAME: 'mysql_blog'
-      WORDPRESS_TABLE_PREFIX: em_
+      WORDPRESS_DB_NAME: 'mysql_wp'
+      WORDPRESS_TABLE_PREFIX: wp_
       WORDPRESS_DB_CHARSET: utf8mb4
       WORDPRESS_DB_COLLATE: utf8mb4_general_ci
       WORDPRESS_CONFIG_EXTRA: |
@@ -132,28 +132,28 @@ services:
           define('WP_CRON_LOCK_TIMEOUT', 300);
           define('FORCE_SSL_ADMIN', true);
           define('FORCE_SSL_LOGIN', true);
-          define("COOKIE_DOMAIN", "blog.YOUR_DOMAIN.com.br");
+          define("COOKIE_DOMAIN", "YOUR_DOMAIN.com.br");
 
     labels:
       traefik.enable: true
 
-      traefik.http.routers.blog-http.rule: Host(`blog.YOUR_DOMAIN.com.br`)
-      traefik.http.routers.blog-http.entrypoints: web
-      traefik.http.routers.blog-http.middlewares: https-redirect@file
+      traefik.http.routers.wp-http.rule: Host(`YOUR_DOMAIN.com.br`)
+      traefik.http.routers.wp-http.entrypoints: web
+      traefik.http.routers.wp-http.middlewares: https-redirect@file
 
-      traefik.http.routers.blog-https.rule: "Host(`blog.YOUR_DOMAIN.com.br`)"
-      traefik.http.routers.blog-https.entrypoints: "websecure"
-      traefik.http.routers.blog-https.middlewares: "security@file, compression@file"
+      traefik.http.routers.wp-https.rule: "Host(`YOUR_DOMAIN.com.br`)"
+      traefik.http.routers.wp-https.entrypoints: "websecure"
+      traefik.http.routers.wp-https.middlewares: "security@file, compression@file"
 
-      traefik.http.routers.blog-https.tls: "true"
-      traefik.http.routers.blog-https.tls.certresolver: "letsencrypt"
+      traefik.http.routers.wp-https.tls: "true"
+      traefik.http.routers.wp-https.tls.certresolver: "letsencrypt"
 
 
 # -----------------------------------------------------------------
-# mkt.YOUR_DOMAIN.com.br
+# Mautic
 
   mautic:
-    image: mautic/mautic:v3
+    image: mautic/mautic:v4
     restart: unless-stopped
     container_name: mautic
 
@@ -163,7 +163,6 @@ services:
     volumes:
       # Define Time
       - /etc/localtime:/etc/localtime:ro
-      # - /etc/timezone:/etc/timezone:ro
     
       # Configuration
       - ./config/mautic/php.ini:/usr/local/etc/php/php.ini:ro
@@ -173,9 +172,8 @@ services:
       - ./data/mautic:/var/www/html
 
       # Crontab Setup
-      - ./config/mautic/cron.d:/etc/cron.d
+      # - ./config/mautic/cron.d:/etc/cron.d
       
-
     environment:
       - MAUTIC_DB_HOST=mysql_mautic
       - MYSQL_PORT_3306_TCP=3306
@@ -183,10 +181,9 @@ services:
       - MAUTIC_DB_USER=mysql_mautic
       - MAUTIC_DB_PASSWORD=8lLLSucessol2V6RXDp
       - MAUTIC_RUN_CRON_JOBS=true
-      - MAUTIC_CRON_HUBSPOT=true
-      # - MAUTIC_TRUSTED_PROXIES=0.0.0.0/0        (Comentei pq nao Funcionou)
-      # - MAUTIC_VERSION=3.2.2                    (Comentei pq nao Funcionou)
-      # - PHP_INI_DATE_TIMEZONE=America/Sao_Paulo (Comentei pq nao Funcionou)
+      # - MAUTIC_CRON_HUBSPOT=true
+      - MAUTIC_TRUSTED_PROXIES=0.0.0.0/0
+      # - PHP_INI_DATE_TIMEZONE=America/Sao_Paulo 
       - PHP_MEMORY_LIMIT=1024M
       - PHP_MAX_UPLOAD=100M
       - PHP_MAX_EXECUTION_TIME=600
@@ -204,6 +201,5 @@ services:
 
       traefik.http.routers.mautic-https.tls: "true"
       traefik.http.routers.mautic-https.tls.certresolver: "letsencrypt"
-
 
 # -----------------------------------------------------------------
